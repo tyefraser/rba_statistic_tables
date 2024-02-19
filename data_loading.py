@@ -1,19 +1,19 @@
 import pandas as pd
 import logging
+from pathlib import Path
+import os
 ## from datetime import datetime, timedelta
 ## from dateutil.relativedelta import relativedelta
 ## from urllib.parse import quote
 import requests
+from urllib.parse import urlparse
 
-from utils import read_yaml
 from utils_streamlit import streamlit_error_stop
 ## from data_processing.business_loans.business_loans import business_loans_fn
 ## from pd_data_frame_checks import check_columns_existence, convert_columns_dict_type_allocation, column_adjustments
 ## from utils_dataframe_calcs import new_calculated_column
 
 logger = logging.getLogger(__name__)
-
-from urllib.parse import urlparse
 
 def extract_filename(url):
     # Parse the URL
@@ -28,13 +28,17 @@ def extract_filename(url):
 
     return filename
 
-def load_file_from_url():
+def load_file_from_url(
+        url,
+        data_folder,
+        file_name: str = '',
+):
 
-    # Get the URL address
-    url = 'https://www.rba.gov.au/statistics/tables/xls/f01d.xls?v=2024-02-19-18-18-28'
+    # If not file name provided, extract one from the URL
+    if file_name == '':
+        file_name = extract_filename(url)
 
-    # Extract the file name form the URL
-    file_name = extract_filename(url)
+    file_path = Path(data_folder,file_name)
 
     try:
         # Attempt to load URL xlsx
@@ -42,10 +46,10 @@ def load_file_from_url():
         response.raise_for_status()  # This will raise an exception if there is an error
 
         # Write the date to the file
-        with open(file_name, 'wb') as f:
+        with open(file_path, 'wb') as f:
             f.write(response.content)
 
-        logger.debug(f"File downloaded successfully! file_name:{file_name}")
+        logger.debug(f"File downloaded successfully! file_name:{file_path}")
     except requests.exceptions.HTTPError as e:        
         # Display an error message and stop the app
         error_text = f"Failed to download the file due to an HTTP error: {e}"
@@ -58,21 +62,27 @@ def load_file_from_url():
         logger.info(error_text)
         streamlit_error_stop(error_text=error_text)
     
-    return file_name
+    return file_path
     
 
-## def read_and_process_data(
-##         config_dict,
-##         file_name,
-##         date_column,
-## ):
-##     # Read the Excel file into a DataFrame
-##     df = pd.read_excel(
-##         io=file_name,
-##         sheet_name=config_dict['file_loading_details']['sheet_name'],
-##         skiprows=config_dict['file_loading_details']['skiprows'],
-##     )
-## 
+def read_as_df(
+        # config_dict,
+        file_path,
+        # date_column,
+):
+    file_extension=os.path.splitext(file_path)[1][1:]
+    logger.debug(f'file_extension"{file_extension}')
+
+    # Read in the Series descriptors
+    
+    
+    # Read the Excel file into a DataFrame
+    # df = pd.read_excel(
+    #     io=file_name,
+    #     sheet_name=config_dict['file_loading_details']['sheet_name'],
+    #     skiprows=config_dict['file_loading_details']['skiprows'],
+    # )
+
 ##     # Sort by date column
 ##     df.sort_values(by=date_column, inplace=True)
 ## 
@@ -96,12 +106,21 @@ def load_file_from_url():
 ##     return df
 ## 
 ## 
-## def data_loader():
-##     logger.debug("Executing: data_loader")
-## 
-##     # Load file from URL
-##     file_name=load_file_from_url()
-##     
+def data_loader(
+        source_yaml,
+        data_folder,
+):
+    logger.debug("Executing: data_loader")
+
+    # Load file from URL
+    file_name = load_file_from_url(
+        url = source_yaml['url'],
+        data_folder = data_folder,
+    )
+
+    # Read data as df
+    # df = read_as_df()
+    
 ## 
 ##     # Read config
 ##     config_dict = read_yaml(file_path = 'config.yaml')
@@ -130,6 +149,6 @@ def load_file_from_url():
 ##                 column=column,
 ##             )
 ## 
-##     logger.debug("Executed: data_loader")
-##     return df, file_name
-## 
+    logger.debug("Executed: data_loader")
+    return file_name
+    ## return df, file_name

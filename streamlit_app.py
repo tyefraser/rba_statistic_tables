@@ -2,7 +2,7 @@ import streamlit_app as st
 import pandas as pd
 import logging
 
-from utils import read_yaml
+from utils import read_yaml, absolute_path, create_directory
 from utils_logging import setup_logging
 from utils_logging import close_log_handlers
 from data_loading import data_loader
@@ -21,8 +21,18 @@ setup_logging()
 logger = logging.getLogger(__name__)
 logger.info("Start of Streamlit App.")
 
+# Setup folder locations
+yamls_folder = absolute_path('source_yamls')
+data_folder = absolute_path('data')
+
+create_directory(data_folder)
+
+# Select what data to look at
+# TO DO
+# validate yaml, must have keys:'url'
+
 # Load data
-df, file_name = data_loader()
+df, file_name = data_loader(data_folder)
 
 
 # Set page width

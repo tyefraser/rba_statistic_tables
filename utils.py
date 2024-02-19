@@ -8,6 +8,7 @@ import logging
 import logging.config
 import yaml
 from math import isnan
+from utils_streamlit import streamlit_error_stop
 
 # Create a logger variable
 logger = logging.getLogger(__name__)
@@ -18,39 +19,22 @@ def project_absolute_path() -> Path:
 def absolute_path(dir: str) -> str:
     return os.path.join(project_absolute_path(), dir)
 
-import os
-
-def guess_is_file_path(path):
+def create_directory(directory_path):
     """
-    Determines if a specified path represents a file, using both filesystem checks and heuristics.
-
-    This function first checks if the path exists in the filesystem. If it does, it directly verifies
-    whether the path is a file. For non-existing paths, it applies a heuristic based on the basename
-    of the path. The heuristic considers the presence of a period ('.') as an indication that the path
-    could represent a file. This approach is not infallible since directories can also contain periods,
-    and not all files have extensions.
+    Creates a directory at the specified path, including all intermediate-level
+    directories needed to contain the leaf directory. If the directory already exists,
+    no error is raised.
 
     Parameters:
-    - path (str): The filesystem path to evaluate.
-
-    Returns:
-    - bool: True if the path is determined to likely represent a file; False otherwise, including when
-      the path is likely a directory or when the determination is uncertain due to the absence of an extension.
+    - path (str): The path of the directory to create.
     """
-    # Direct filesystem check to determine if the path exists and is a file.
-    if os.path.exists(path):
-        return os.path.isfile(path)
-    
-    # Apply heuristic for non-existing paths, suggesting it's a file if there's a period in the basename.
-    return "." in os.path.basename(path)
-
-def create_directory_if_not_exists(absolute_path):
-    # Extract the directory path
-    directory_path = os.path.dirname(absolute_path)
-
-    # Check if the directory exists, if not, create it
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
+    try:
+        os.makedirs(directory_path, exist_ok=True)
+        logger.debug(f"Directory '{directory_path}' created successfully or already exists.")
+    except Exception as e:        
+        error_text = f"Failed to create directory '{directory_path}'. Error: {e}"
+        logger.info(error_text)
+        streamlit_error_stop(error_text)
 
 def assert_file_extension(
         file_name,
