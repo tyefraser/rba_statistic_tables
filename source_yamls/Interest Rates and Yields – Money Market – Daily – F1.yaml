@@ -1,2 +1,10 @@
+# URL for loading the file
 url: 'https://www.rba.gov.au/statistics/tables/xls/f01d.xls'
-table_header_id: 'Series ID'
+
+# Information to load in data as a narrow df
+file_reader : read_xls_with_header # This is the function that will be used to download the data. This is determined based on the file extension and data presentation for the file being loaded.
+sheet_name: 'Data' # This is the sheet that the data is on
+skiprows: 1 # This is the first row that the headers start at
+table_header_id: 'Series ID' # This is the header in the first column directly before the data starts (this is used to determine where to split the headers from the data)
+convert_headers:
+  'Title': 'Date' # Renames the 'Title' column to be the 'Date' column

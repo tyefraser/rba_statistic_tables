@@ -13,11 +13,31 @@ from utils_streamlit import streamlit_error_stop
 # Create a logger variable
 logger = logging.getLogger(__name__)
 
-def project_absolute_path() -> Path:
-    return Path(__file__).resolve().parents[0]
 
-def absolute_path(dir: str) -> str:
-    return os.path.join(project_absolute_path(), dir)
+def project_absolute_path() -> Path:
+    """
+    Obtain the absolute path of the project directory.
+
+    Returns:
+        A Path object representing the absolute path of the project directory.
+    """
+    return Path(__file__).resolve().parent
+
+def absolute_path(directory: str) -> Path:
+    """
+    Construct an absolute path to a directory within the project.
+
+    Args:
+        directory (str): The directory name or path relative to the project directory.
+
+    Returns:
+        A Path object representing the absolute path to the specified directory within the project.
+    """
+    return project_absolute_path() / directory
+
+
+# def absolute_path(dir: str) -> str:
+#     return os.path.join(project_absolute_path(), dir)
 
 def create_directory(directory_path):
     """

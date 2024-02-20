@@ -32,7 +32,7 @@ create_directory(data_folder)
 # validate yaml, must have keys:'url'
 
 # Load data
-df, file_name = data_loader(data_folder)
+#df, file_name = data_loader(data_folder)
 
 
 # Set page width

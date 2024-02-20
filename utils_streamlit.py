@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit_app as st
 
 def streamlit_error_stop(
         error_text
