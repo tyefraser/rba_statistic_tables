@@ -8,3 +8,21 @@ skiprows: 1 # This is the first row that the headers start at
 table_header_id: 'Series ID' # This is the header in the first column directly before the data starts (this is used to determine where to split the headers from the data)
 convert_headers:
   'Title': 'Date' # Renames the 'Title' column to be the 'Date' column
+
+# Infromation to clean the data
+# For data df
+date_column: 'Date' # Name of the column to use as a date
+# For header descriptions df
+units_column: 'Units' # Column identifying the unit type
+col_name_id: 'Title' # Column providing column name
+# Cleaned df
+expected_columns: ['Date', 'Cash Rate Target', 'Change in the Cash Rate Target ',
+  'Interbank Overnight Cash Rate',
+  'Highest Interbank Overnight Cash Rate',
+  'Lowest Interbank Overnight Cash Rate',
+  'Volume of Cash Market Transactions',
+  'Number of Cash Market Transactions', 'Total Return Index',
+  'EOD 1-month BABs/NCDs', 'EOD 3-month BABs/NCDs',
+  'EOD 6-month BABs/NCDs', '1-month OIS', '3-month OIS', '6-month OIS',
+  '1-month Treasury Note', '3- month Treasury Note',
+  '6- month Treasury Note']
