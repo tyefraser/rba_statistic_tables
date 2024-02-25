@@ -74,7 +74,7 @@ def assert_file_extension(
 
 def read_yaml(file_path: str):
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, 'r', encoding='utf-8') as file:
             yaml_data = safe_load(file)
         return yaml_data
     except FileNotFoundError:

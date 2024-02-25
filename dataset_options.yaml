@@ -1,0 +1,8 @@
+# This yaml provides the options available for what information to display. It is structured 
+# to have the option as the first level. Then the 'dataset_yaml_name_list' as the second level.
+# This is to only include the yaml file name (yaml_name.yaml) and NOT the full path (C://path/to/yaml.yaml), e.g:
+# Option that the user will see displayed
+#   - list of yaml files required to obtain data for that selection (from the specified yamls folder)
+
+'Interest Rates and Yields – Money Market – Daily – F1':
+  - 'rba_f01d.yaml'

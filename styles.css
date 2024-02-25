@@ -1,0 +1,76 @@
+/* Apply to the main content area */
+.stApp {
+    background-color: white;
+}
+
+/* Target the Markdown text container specifically */
+.markdown-text-container {
+    background-color: white;
+}
+
+/* You may need to target other specific containers depending on your needs,
+   for example, card containers for different widgets */
+.stCard {
+    background-color: white;
+}
+
+/* Ensure background for DataFrame and tables */
+.stDataFrame, .stTable {
+    background-color: white;
+}
+
+/* Text Colours */
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    background-color: #FFFFFF;
+    color: #1E3A2F !important;  /* Dark green color for the title text */
+}
+/* body and paragraphs */
+p {
+    background-color: #FFFFFF;
+    color: #000000 !important; /* Sets text color to black */
+}
+
+/*
+.stTextInput>div>div>input {
+    color: #4f4f4f;
+} */
+
+/* Attempt to target the selectbox directly */
+/* Note: This might not be effective due to Streamlit's encapsulation of widgets */
+.css-2trqyj {
+    background-color: #f0f2f6 !important; /* Light grey background */
+    color: #000000 !important; /* Black text color */
+}
+
+/* If Streamlit uses a specific class for the select input, you might need to inspect the HTML 
+   and update the class name accordingly 
+.select-container select {
+    background-color: #f0f2f6 !important; /* Light grey background 
+    color: #000000 !important; /* Black text color 
+}
+*/
+div[role="listbox"] ul {
+    background-color: red !important;
+}
+
+div[data-baseweb="select"] > div {
+    background-color: #EAF6EE !important;
+    border-color: #000000 !important;
+}
+div[class="row-widget stSelectbox"] > div {
+    background-color: #EAF6EE !important;
+}
+div[class="st-emotion-cache-sy3zga e1gc5fo21"] > div {
+    background-color: #EAF6EE !important;
+}
+div[class="st-emotion"] > div {
+    background-color: #EAF6EE !important;
+}
+
+
+
+
+.st-b6 {
+    color: black;
+}

@@ -9,6 +9,7 @@ import pickle
 ## from datetime import datetime, timedelta
 ## from dateutil.relativedelta import relativedelta
 ## from urllib.parse import quote
+from utils import read_yaml
 import requests
 from urllib.parse import urlparse
 
@@ -20,16 +21,31 @@ from utils_streamlit import streamlit_error_stop
 
 logger = logging.getLogger(__name__)
 
-def get_data_dict(data_dict_file_path):
 
-    if os.path.isfile(data_dict_file_path):
-        # If the file exists, download the existing data dictionary
-        with open(data_dict_file_path, 'rb') as file:
-            data_dict = pickle.load(data_dict_file_path)
-    else:
-        data_dict = {}
-    
-    return data_dict
+def get_pickle_dict_file(pickle_dict_file_path):
+    """
+    Loads a dictionary from a pickle file if it exists. If the file does not exist, initializes an empty dictionary.
+    After reading, the pickle file is deleted.
+
+    :param pickle_dict_file_path: Path to the pickle file.
+    :return: A dictionary loaded from the pickle file or an empty dictionary if the file does not exist.
+    """
+    pickle_dict = {}
+
+    if os.path.isfile(pickle_dict_file_path):
+        try:
+            with open(pickle_dict_file_path, 'rb') as file:
+                pickle_dict = pickle.load(file)
+        except Exception as e:
+            print(f"Error reading pickle file: {e}")
+            return pickle_dict  # Return an empty dict or consider re-raising the exception
+        
+        try:
+            os.remove(pickle_dict_file_path)
+        except Exception as e:
+            print(f"Error deleting pickle file: {e}")
+            # Decide how to handle the error - raise exception, log, etc.
+    return pickle_dict
 
 def extract_filename(url: str) -> Optional[str]:
     """
@@ -122,7 +138,7 @@ def load_file_from_url(
 
 def read_xls_with_header(
         file_path: Path,
-        source_yaml: Dict
+        dataset_yaml_dict: Dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Reads an Excel file (.xls or .xlsx), separating extended header information from the actual data.
@@ -134,7 +150,7 @@ def read_xls_with_header(
 
     Args:
         file_path (Path): The path to the Excel file.
-        source_yaml (Dict): Configuration specifying parameters such as:
+        dataset_yaml_dict (Dict): Configuration specifying parameters such as:
                             - 'sheet_name': Name or index of the sheet to read.
                             - 'header': Row (0-indexed) to use as header.
                             - 'table_header_id': Identifier to locate the start of data.
@@ -152,14 +168,14 @@ def read_xls_with_header(
     # Load the data set from the specified sheet without using the first row as header
     sheet_df = pd.read_excel(
         io=file_path,
-        sheet_name=source_yaml['sheet_name'],
+        sheet_name=dataset_yaml_dict['sheet_name'],
         header=None,  # Read without using the first row as header
-        skiprows=source_yaml.get('skiprows', 0),  # Use 'skiprows' from source_yaml if provided
+        skiprows=dataset_yaml_dict.get('skiprows', 0),  # Use 'skiprows' from dataset_yaml_dict if provided
         engine=engine,
     )
 
     # Correctly find the start of data based on a unique identifier
-    start_of_data_idx = sheet_df[sheet_df.iloc[:, 0] == source_yaml['table_header_id']].index[0]
+    start_of_data_idx = sheet_df[sheet_df.iloc[:, 0] == dataset_yaml_dict['table_header_id']].index[0]
 
     # Correctly process header descriptions
     header_df = sheet_df.iloc[:start_of_data_idx].dropna(subset=[0])  # Correct subset reference
@@ -171,7 +187,7 @@ def read_xls_with_header(
     original_df = sheet_df.iloc[start_of_data_idx + 1:].reset_index(drop=True)
     original_df.columns = sheet_df.iloc[0].values
     original_df = original_df[1:]  # Skip the header row now used for column names
-    original_df.rename(columns=source_yaml.get('convert_headers', {}), inplace=True)
+    original_df.rename(columns=dataset_yaml_dict.get('convert_headers', {}), inplace=True)
 
     return header_df, original_df
 
@@ -227,22 +243,22 @@ def clean_df(
 
 def read_file_as_df(
         file_path,
-        source_yaml,
+        dataset_yaml_dict,
 ):
     # Read in data from file
-    if source_yaml['file_reader'] == 'read_xls_with_header':
+    if dataset_yaml_dict['file_reader'] == 'read_xls_with_header':
         header_descriptions_df, original_df = read_xls_with_header(
             file_path,
-            source_yaml,
+            dataset_yaml_dict,
         )
 
     # Clean the data
     cleaned_df = clean_df(
         header_descriptions_df = header_descriptions_df,
         original_df = original_df,
-        date_column = source_yaml['date_column'],
-        units_column = source_yaml['units_column'],
-        col_name_id = source_yaml['col_name_id'],
+        date_column = dataset_yaml_dict['date_column'],
+        units_column = dataset_yaml_dict['units_column'],
+        col_name_id = dataset_yaml_dict['col_name_id'],
     )
 
     return header_descriptions_df, cleaned_df
@@ -282,48 +298,88 @@ def check_columns_existence(
 
 def df_data_quality_checks(
         df,
-        source_yaml
+        dataset_yaml_dict
 ):
     # Check expected columns exist
     check_columns_existence(
          df=df,
-         target_columns=source_yaml['expected_columns']
+         target_columns=dataset_yaml_dict['expected_columns']
     )
 
-def data_loader(
-        source_yaml,
+def dataset_dict(
+        dataset_yaml_dict,
         data_folder,
 ):
-    logger.debug("Executing: data_loader")
+    """
+    Create the dictionary for the dataset defined in the yaml provided
+    """
+    logger.debug(f'Executing: dataset_dict')
+    create_dataset_dict = {}
 
-    # Set the data_dict file path location
-    data_dict_file_path = os.path.join(data_folder, 'data_dict.pkl')
-    # TO DO: If loading takes too long, consider spliting into separate dictionaries and loading each individually.
+    # File url and return the file path
+    if 'file_url' in dataset_yaml_dict.keys():
+        # Download file from url if required
+        # Load file from URL
+        create_dataset_dict['file_path'] = load_file_from_url(
+            url = dataset_yaml_dict['file_url'],
+            data_folder = data_folder,
+        )
 
-    # Get the existing data_dict
-    data_dict = get_data_dict(data_dict_file_path)
-
-    # Load file from URL
-    file_path = load_file_from_url(
-        url = source_yaml['url'],
-        data_folder = data_folder,
-    )
-
-    header_descriptions_df, cleaned_df = read_file_as_df(
-        file_path = file_path,
-        source_yaml = source_yaml,
+    # Generate df from file
+    (
+        create_dataset_dict['header_descriptions_df'],
+        create_dataset_dict['cleaned_df'],
+    ) = read_file_as_df(
+        file_path = create_dataset_dict['file_path'],
+        dataset_yaml_dict = dataset_yaml_dict,
     )
 
     # Perform DQ checks
     df_data_quality_checks(
-        df = cleaned_df,
-        source_yaml = source_yaml,
+        df = create_dataset_dict['cleaned_df'],
+        dataset_yaml_dict = dataset_yaml_dict,
     )
 
-    # Save data_dict to a pickle file
-    
-    with open(data_dict_file_path, 'wb') as file:
+    logger.debug(f'Executed: dataset_dict')
+    return create_dataset_dict
+
+def data_loader(
+        dataset_yamls_folder,
+        dataset_yaml_name_list,
+        data_folder,
+):
+    logger.info("Executing: data_loader")    
+
+    # Set the data_dict file path location
+    data_dict_pickle_file_path = os.path.join(data_folder, 'data_dict.pkl')
+    logger.debug(f"data_dict_pickle_file_path:{data_dict_pickle_file_path}")
+    # TO DO: If loading takes too long, consider spliting into separate dictionaries and loading each individually.
+
+    # Get the existing data_dict
+    data_dict = get_pickle_dict_file(data_dict_pickle_file_path)
+    logger.debug(f"data_dict from get_pickle_dict_file read in. Keys: {data_dict.keys()}")
+
+    # Loop through all of the dataset yamls required
+    logger.debug(f"dataset_yaml_list:{dataset_yaml_name_list}")
+    for dataset_yaml_name in dataset_yaml_name_list:
+        logger.debug(f"dataset_yaml_name:{dataset_yaml_name}")
+        
+        # Get the name of the dataset
+        dataset = dataset_yaml_name[:dataset_yaml_name.rfind('.')]
+        logger.debug(f"dataset:{dataset}")
+        dataset_yaml_dict = read_yaml(os.path.join(dataset_yamls_folder, dataset_yaml_name))
+        logger.debug(f"dataset_yaml_dict:{dataset_yaml_dict}")
+        
+        # If data doesnt exists, download it
+        if dataset not in data_dict.keys():
+            data_dict[dataset] = dataset_dict(
+                dataset_yaml_dict = dataset_yaml_dict,
+                data_folder = data_folder,
+            )
+
+    # Save data_dict to a pickle file for future useage
+    with open(data_dict_pickle_file_path, 'wb') as file:
         pickle.dump(data_dict, file)
     
-    logger.debug("Executed: data_loader")
-    return file_path, header_descriptions_df, cleaned_df
+    logger.info("Executed: data_loader")
+    return data_dict
