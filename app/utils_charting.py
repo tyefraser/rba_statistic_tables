@@ -1,6 +1,7 @@
 import plotly_express as px
 
-def tf_line_chart(
+
+def single_line_chart(
         # Line chart
         data_frame=None,
         x=None,
@@ -45,8 +46,8 @@ def tf_line_chart(
         width=None,
         height=None,
 
-        # Title Design
-        tf_title_dict=None,
+        # Design
+        y_tickformat=None,
 
 ):
     # Generate Line Chart
@@ -95,41 +96,46 @@ def tf_line_chart(
         height=height,
     )
 
-    # Title 
+    # Title
     fig.update_layout(
-        title=tf_title_dict,
+        title={
+            'text': title,
+            'font': {
+                'family': "Arial, sans-serif",
+                'size': 24,
+                # 'color': "#1E3A2F"  # Dark green
+            },
+            'x': 0.5,
+            'y': 0.9,
+            'xanchor': 'center',
+            'yanchor': 'top'
+        }
     )
-    
+
     # Background
-    fig.update_layout(
-        plot_bgcolor='#FFFFFF',
-        paper_bgcolor='#FFFFFF',
-    )
+    # fig.update_layout(
+    #     plot_bgcolor='#FFFFFF',
+    #     paper_bgcolor='#FFFFFF',
+    # )
 
     # X axis
     fig.update_xaxes(
         showgrid=True,
         gridwidth=1,
-        gridcolor='black',
-        tickcolor='black',
-        tickfont=dict(color='black'),
+        # gridcolor='black',
+        # tickcolor='black',
+        # tickfont=dict(color='black'),
     )
 
     # Y axis
     fig.update_yaxes(
         showgrid=True,
         gridwidth=1,
-        gridcolor='black',
-        tickcolor='black',
-        tickfont=dict(color='black'),
-        
+        # gridcolor='black',
+        # tickcolor='black',
+        # tickfont=dict(color='black'),
+        tickformat=y_tickformat,
     )
-    
-    # # Y axis
-    # fig.update_layout(
-    #     yaxis_title='Interest Rate',
-    #     yaxis_tickformat='.2%',  # Formats ticks as percentages with 2 decimal places
-    # )
 
     # Legend
     fig.update_layout(

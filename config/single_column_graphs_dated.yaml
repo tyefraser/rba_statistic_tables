@@ -1,0 +1,46 @@
+# This yaml is used to graph 2 column (e.g. date and value columns)
+# The structure is:
+# `<data_set>:` The data used to produce the graph (must be a key of data_dict). Note: Once 
+# generated the data will be saved and doesnt need to be loaded again
+#  `<title>:` The name of the single column to be charted
+#    `keys: [list]` A list of the additional keys to find the data set to graph
+#  
+# Single column groupings
+
+# Selected dataset
+'Interest Rates and Yields – Money Market – Daily – F1':
+  # Dataframe
+  cleaned_df:
+    keys: ['rba_f01d', 'cleaned_df']
+    date_col: 'Date'
+    # Column
+    'Cash Rate Target':
+      y_column: 'Cash Rate Target'
+      graphing_dict:
+        title: 'Cash Rate Target'
+        y_tickformat: '.2%'
+      analysis_type: percentage
+    'Interbank Overnight Cash Rate':
+      y_column: 'Interbank Overnight Cash Rate'
+      graphing_dict:
+        title: 'Interbank Overnight Cash Rate'
+        y_tickformat: '.2%'
+      analysis_type: percentage
+    'EOD 1-month BABs/NCDs':
+      y_column: 'EOD 1-month BABs/NCDs'
+      graphing_dict:
+        title: 'EOD 1-month BABs/NCDs'
+        y_tickformat: '.2%'
+      analysis_type: percentage
+    'EOD 3-month BABs/NCDs':
+      y_column: 'EOD 3-month BABs/NCDs'
+      graphing_dict:
+        title: 'EOD 3-month BABs/NCDs'
+        y_tickformat: '.2%'
+      analysis_type: percentage
+    'EOD 6-month BABs/NCDs':
+      y_column: 'EOD 6-month BABs/NCDs'
+      graphing_dict:
+        title: 'EOD 6-month BABs/NCDs'
+        y_tickformat: '.2%'
+      analysis_type: percentage

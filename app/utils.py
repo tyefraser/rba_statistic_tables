@@ -1,7 +1,10 @@
 from yaml import safe_load, YAMLError
 from math import floor, log10
 from dateutil.relativedelta import relativedelta
+import pandas as pd
+import pickle
 
+from typing import List, Optional, Dict
 import os
 from pathlib import Path
 import logging
@@ -14,7 +17,7 @@ from utils_streamlit import streamlit_error_stop
 logger = logging.getLogger(__name__)
 
 
-def project_absolute_path() -> Path:
+def app_absolute_path() -> Path:
     """
     Obtain the absolute path of the project directory.
 
@@ -23,7 +26,8 @@ def project_absolute_path() -> Path:
     """
     return Path(__file__).resolve().parent
 
-def absolute_path(directory: str) -> Path:
+
+def app_item_absolute_path(directory: str) -> Path:
     """
     Construct an absolute path to a directory within the project.
 
@@ -33,11 +37,31 @@ def absolute_path(directory: str) -> Path:
     Returns:
         A Path object representing the absolute path to the specified directory within the project.
     """
-    return project_absolute_path() / directory
+    return app_absolute_path() / directory
 
 
-# def absolute_path(dir: str) -> str:
-#     return os.path.join(project_absolute_path(), dir)
+def repo_absolute_path() -> Path:
+    """
+    Obtain the absolute path of the project directory.
+
+    Returns:
+        A Path object representing the absolute path of the project directory.
+    """
+    return Path(__file__).resolve().parent.parent
+
+
+def repo_item_absolute_path(directory: str) -> Path:
+    """
+    Construct an absolute path to a directory within the project.
+
+    Args:
+        directory (str): The directory name or path relative to the project directory.
+
+    Returns:
+        A Path object representing the absolute path to the specified directory within the project.
+    """
+    return repo_absolute_path() / directory
+
 
 def create_directory(directory_path):
     """
@@ -72,6 +96,7 @@ def assert_file_extension(
         logger.info(f"AssertionError: {e}")
         raise AssertionError(f"AssertionError: {e}")
 
+
 def read_yaml(file_path: str):
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -81,6 +106,7 @@ def read_yaml(file_path: str):
         print(f"Error: File '{file_path}' not found.")
     except YAMLError as e:
         print(f"Error parsing YAML in '{file_path}': {e}")
+
 
 def rounded_number(number):
     if (number is None) or (isnan(number)):
@@ -226,8 +252,9 @@ def months_ago_list_fn(
         months_list = [1]
     else:
         logger.info("ERROR: cant generate months list")
-    
+
     return months_list
+
 
 def get_months_ago_list(
         df,
@@ -242,3 +269,96 @@ def get_months_ago_list(
     months_ago_list = months_ago_list_fn(total_months)
 
     return months_ago_list
+
+
+def get_nested_data(d, keys):
+    """
+    Recursively access nested data in a dictionary using a list of keys.
+    
+    :param d: The dictionary to search.
+    :param keys: A list of keys representing the path to the target data.
+    :return: The data found at the path, or None if the path is invalid.
+    """
+    assert isinstance(keys, list), "Keys must be provided as a list"
+    for key in keys:
+        try:
+            d = d[key]
+        except (KeyError, TypeError):
+            return None
+    return d
+
+
+def find_dates_or_earlier(
+        series: pd.Series,
+        months: List[int] = [12, 60, 120, 240]
+) -> Dict[str, Optional[pd.Timestamp]]:
+    """
+    For a given Pandas Series of dates, finds the latest date, then searches for the dates exactly 'months' months before the latest date.
+    If such a date does not exist, it finds the most recent date before that. Results for multiple month intervals can be obtained in one call.
+
+    Parameters:
+    - series (pd.Series): Pandas Series of dates in datetime64[ns] format.
+    - months (List[int]): List of month intervals to go back from the latest date.
+
+    Returns:
+    - Dict[str, Optional[pd.Timestamp]]: A dictionary with keys for 'latest_date' and each of the specified months.
+      The values are the corresponding dates found or None if no such date exists for that month interval.
+
+    Example:
+    >>> dates = pd.date_range(start="2010-01-01", periods=100, freq="M")
+    >>> series = pd.Series(dates)
+    >>> find_dates_or_earlier(series)
+    """
+    
+    if series.empty:
+        return {"latest_date": None}
+    
+    dates_dict = {}
+    
+    # Ensure the series is sorted in ascending order
+    series_sorted = series.sort_values()
+    
+    # Identify the latest date in the series
+    latest_date = series_sorted.iloc[-1]
+    dates_dict['latest_date'] = latest_date
+
+    for month in months:
+        # Calculate the target date
+        target_date = latest_date - pd.DateOffset(months=month)
+        
+        # Filter the series for dates on or before the target date
+        past_dates = series_sorted[series_sorted <= target_date]
+        
+        # If there are any such dates, store the most recent one; otherwise, store None
+        if not past_dates.empty:
+            dates_dict[str(month)] = past_dates.iloc[-1]        
+    
+    return dates_dict
+
+
+def get_pickle_dict_file(pickle_dict_file_path):
+    """
+    Loads a dictionary from a pickle file if it exists. If the file does not exist, initializes an
+    empty dictionary. After reading, the pickle file is deleted.
+
+    :param pickle_dict_file_path: Path to the pickle file.
+    :return: A dictionary loaded from the pickle file or an empty dictionary if the file does not
+    exist.
+    """
+    pickle_dict = {}
+
+    if os.path.isfile(pickle_dict_file_path):
+        try:
+            with open(pickle_dict_file_path, 'rb') as file:
+                pickle_dict = pickle.load(file)
+                logger.debug('Pickle fiel laoded')
+        except Exception as e:
+            logger.info(f"Error reading pickle file: {e}")
+            return pickle_dict  # Return an empty dict or consider re-raising the exception
+
+        try:
+            os.remove(pickle_dict_file_path)
+        except Exception as e:
+            logger.info(f"Error deleting pickle file: {e}")
+            # Decide how to handle the error - raise exception, log, etc.
+    return pickle_dict

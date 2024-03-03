@@ -5,4 +5,6 @@
 #   - list of yaml files required to obtain data for that selection (from the specified yamls folder)
 
 'Interest Rates and Yields – Money Market – Daily – F1':
-  - 'rba_f01d.yaml'
+  required_data:
+    - 'rba_f01d.yaml'
+  # display_function: interest_rates_and_yields_money_market_daily_f1
